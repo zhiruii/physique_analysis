@@ -1,0 +1,106 @@
+import cv2
+import numpy as np
+import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+import tensorflow as tf
+from pathlib import Path
+
+HERE        = Path(__file__).parent
+MODEL_PATH  = str(HERE / 'models' / 'physique_classifier_3class.h5')
+TASK_PATH   = str(HERE / 'pose_landmarker_lite.task')
+IMG_SIZE    = (224, 224)
+
+# Keras assigns class indices alphabetically
+CLASS_LABELS    = ['advanced', 'beginner', 'intermediate']
+CLASS_MIDPOINTS = {'advanced': 84, 'beginner': 16, 'intermediate': 50}
+
+model = tf.keras.models.load_model(MODEL_PATH)
+
+base_options = mp_python.BaseOptions(model_asset_path=TASK_PATH)
+options = vision.PoseLandmarkerOptions(
+    base_options=base_options,
+    running_mode=vision.RunningMode.IMAGE,
+    num_poses=1,
+    min_pose_detection_confidence=0.5,
+    min_pose_presence_confidence=0.5,
+    min_tracking_confidence=0.5,
+)
+landmarker = vision.PoseLandmarker.create_from_options(options)
+
+LEFT_SHOULDER  = 11
+RIGHT_SHOULDER = 12
+
+# Body-only connections — no face (0-10) or finger detail (17-22)
+BODY_CONNECTIONS = [
+    (11,12),                          # shoulders
+    (11,13),(13,15),                  # left arm
+    (12,14),(14,16),                  # right arm
+    (11,23),(12,24),(23,24),          # torso
+    (23,25),(25,27),(27,29),(27,31),(29,31),  # left leg
+    (24,26),(26,28),(28,30),(28,32),(30,32),  # right leg
+]
+BODY_LANDMARKS = set(range(11, 17)) | set(range(23, 33))  # shoulders→wrists, hips→feet
+
+def draw_pose(frame, pose_landmarks):
+    """Overlay body skeleton (no face or fingers) on frame in-place."""
+    if not pose_landmarks:
+        return
+    h, w = frame.shape[:2]
+    lms = pose_landmarks[0]
+    for a, b in BODY_CONNECTIONS:
+        if lms[a].visibility > 0.5 and lms[b].visibility > 0.5:
+            p1 = (int(lms[a].x * w), int(lms[a].y * h))
+            p2 = (int(lms[b].x * w), int(lms[b].y * h))
+            cv2.line(frame, p1, p2, (255, 255, 0), 2)
+    for i in BODY_LANDMARKS:
+        if lms[i].visibility > 0.5:
+            cv2.circle(frame, (int(lms[i].x * w), int(lms[i].y * h)), 5, (0, 255, 255), -1)
+
+def compute_score(probs):
+    return round(sum(probs[i] * CLASS_MIDPOINTS[CLASS_LABELS[i]] for i in range(3)))
+
+def upper_body_visible(pose_landmarks):
+    if not pose_landmarks:
+        return False
+    lm = pose_landmarks[0]
+    return lm[LEFT_SHOULDER].visibility > 0.6 and lm[RIGHT_SHOULDER].visibility > 0.6
+
+cap = cv2.VideoCapture(0)
+print("Physique Analyser — press Q to quit")
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    rgb      = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+    result   = landmarker.detect(mp_image)
+
+    draw_pose(frame, result.pose_landmarks)
+
+    if upper_body_visible(result.pose_landmarks):
+        img   = cv2.resize(frame, IMG_SIZE).astype('float32') / 255.0
+        probs = model.predict(np.expand_dims(img, axis=0), verbose=0)[0]
+
+        label = CLASS_LABELS[np.argmax(probs)]
+        score = compute_score(probs)
+
+        cv2.putText(frame, f'{label.upper()}  {score}/100',
+                    (30, 55), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (0, 230, 0), 2)
+
+        for i, cls in enumerate(CLASS_LABELS):
+            cv2.putText(frame, f'{cls}: {probs[i]:.2f}',
+                        (30, 110 + i * 28), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 200, 200), 1)
+    else:
+        cv2.putText(frame, 'Position upper body in frame',
+                    (30, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 165, 255), 2)
+
+    cv2.imshow('Physique Analyser', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+landmarker.close()
