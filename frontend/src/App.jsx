@@ -3,7 +3,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import './App.css'
 
 const CLASS_LABELS    = ['advanced', 'beginner', 'intermediate']
-const CLASS_MIDPOINTS = { advanced: 84, beginner: 16, intermediate: 50 }
+const CLASS_MIDPOINTS = { advanced: 93, beginner: 30, intermediate: 68 }
 
 function computeScore(probs) {
   return Math.round(
@@ -18,6 +18,12 @@ const BODY_CONNECTIONS = [
   [24,26],[26,28],[28,30],[28,32],[30,32],
 ]
 const BODY_IDS = [11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32]
+
+// Landmarks used for upper body crop — matches normalize_dataset.py
+const CROP_LM_IDS = [11, 12, 13, 14, 15, 16, 23, 24]
+const PAD_TOP     = 0.15
+const PAD_BOTTOM  = 0.05
+const PAD_SIDES   = 0.15
 
 function drawSkeleton(ctx, landmarks, w, h) {
   if (!landmarks?.length) return
@@ -187,11 +193,39 @@ export default function App() {
 
         setPoseVisible(upperBody)
 
-        // Send frame to worker for inference (only when model is ready and not busy)
+        // Send cropped upper body frame to worker for inference
         if (upperBody && modelReadyRef.current && !pendingRef.current) {
           pendingRef.current = true
+
+          const lms = result.landmarks[0]
+          const visible = CROP_LM_IDS.filter(i => (lms[i]?.visibility ?? 0) >= 0.3)
+          const xs = visible.map(i => lms[i].x)
+          const ys = visible.map(i => lms[i].y)
+
+          let xMin = Math.min(...xs), xMax = Math.max(...xs)
+          let yMin = Math.min(...ys), yMax = Math.max(...ys)
+          const cropW = xMax - xMin
+          const cropH = yMax - yMin
+
+          xMin -= cropW * PAD_SIDES
+          xMax += cropW * PAD_SIDES
+          yMin -= cropH * PAD_TOP
+          yMax += cropH * PAD_BOTTOM
+
+          // Force square crop — matches normalize_dataset.py
+          const cx   = (xMin + xMax) / 2
+          const cy   = (yMin + yMax) / 2
+          const half = Math.max(xMax - xMin, yMax - yMin) / 2
+          xMin = Math.max(0, cx - half)
+          xMax = Math.min(1, cx + half)
+          yMin = Math.max(0, cy - half)
+          yMax = Math.min(1, cy + half)
+
+          const sx = xMin * w, sy = yMin * h
+          const sw = (xMax - xMin) * w, sh = (yMax - yMin) * h
+
           const capCtx = capture.getContext('2d')
-          capCtx.drawImage(video, 0, 0, 224, 224)
+          capCtx.drawImage(video, sx, sy, sw, sh, 0, 0, 224, 224)
           const imageData = capCtx.getImageData(0, 0, 224, 224)
           worker.postMessage(
             { type: 'predict', pixels: imageData.data, width: 224, height: 224 },
@@ -231,6 +265,17 @@ export default function App() {
         <div className="hero-col">
           <h1 className="hero-title">PHENO<br />Physique<br />Analysis.</h1>
           <p className="hero-sub">Real-time physique classification.<br />All processing local. Nothing transmitted.</p>
+
+          <div className="ref-scale">
+            <div className="ref-title">SCORE REFERENCE</div>
+            <ul className="ref-list">
+              <li><span className="ref-range">90+</span><span className="ref-desc">Professional competitor</span></li>
+              <li><span className="ref-range">80–90</span><span className="ref-desc">Sponsored athlete</span></li>
+              <li><span className="ref-range">60–75</span><span className="ref-desc">Competitive amateur</span></li>
+              <li><span className="ref-range">40–55</span><span className="ref-desc">2–3 yrs consistent lifting</span></li>
+              <li><span className="ref-range">20–35</span><span className="ref-desc">First year of training</span></li>
+            </ul>
+          </div>
         </div>
 
         <div className="content-col">

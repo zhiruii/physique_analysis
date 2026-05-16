@@ -389,6 +389,50 @@
   margin-top: 2px;
 }
 
+/* ── Reference scale ───────────────────────────────────────── */
+.ref-scale {
+  margin-top: 8px;
+}
+
+.ref-title {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.ref-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ref-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border);
+}
+
+.ref-range {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--green);
+  letter-spacing: 0.06em;
+}
+
+.ref-desc {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .pheno-layout { flex-direction: column; }

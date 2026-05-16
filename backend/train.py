@@ -5,7 +5,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 import os
 
-DATASET_DIR = '../dataset'
+DATASET_DIR = '../dataset_normalized'
 IMG_SIZE    = (224, 224)
 BATCH_SIZE  = 16
 EPOCHS      = 30
