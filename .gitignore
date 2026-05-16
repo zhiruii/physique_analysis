@@ -1,6 +1,7 @@
 #Large data / training artifacts
 blender_files/
 dataset/
+dataset_normalized/
 renders/
 CLAUDE.md
 
