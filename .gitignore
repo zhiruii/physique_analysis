@@ -1,4 +1,22 @@
+#Large data / training artifacts
 blender_files/
 dataset/
 renders/
 CLAUDE.md
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Intermediate model conversion
+backend/models/saved_model/
+
+# MediaPipe task file (only needed for local Python inference testing)
+backend/pose_landmarker_lite.task
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
