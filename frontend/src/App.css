@@ -412,11 +412,48 @@
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 700px) {
+  /* Sidebar is desktop-only — primary info is camera + score */
+  .hero-col { display: none; }
+
+  /* Stack everything vertically */
   .pheno-layout { flex-direction: column; }
-  .hero-col { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 20px 16px; }
-  .hero-title { font-size: 1.8rem; }
-  .camera-score-row { flex-direction: column; height: auto; }
+  .content-col { overflow: visible; }
+
+  /* Compact header */
+  .pheno-header { padding: 10px 14px; }
+  .feedback-btn { font-size: 0.58rem; padding: 5px 8px; letter-spacing: 0.03em; }
+
+  /* Privacy banner — smaller, allow wrap */
+  .privacy-banner { font-size: 0.58rem; padding: 6px 12px; letter-spacing: 0.03em; }
+
+  /* Camera fills most of the screen */
+  .camera-score-row { flex-direction: column; height: auto; border-bottom: none; }
+  .window-header { display: none; }
   .analysis-window { border-right: none; border-bottom: 1px solid var(--border); }
-  .viewport { height: 280px; }
+  .viewport { height: 52vh; }
+
+  /* Frame hint — allow wrapping on narrow screens */
+  .frame-hint {
+    white-space: normal;
+    text-align: center;
+    font-size: 0.7rem;
+    bottom: 10px;
+    left: 8%;
+    right: 8%;
+    transform: none;
+    width: auto;
+  }
+
+  /* Score panel */
   .score-panel { width: 100%; }
+  .score-card { padding: 14px 16px; gap: 2px; }
+  .main-score { font-size: 3.5rem; }
+
+  /* Reference scale is non-critical — hide to save space */
+  .ref-scale { display: none; }
+
+  /* Compact metrics bar */
+  .metrics-bar { padding: 12px 16px; gap: 8px; }
+  .stat-label { font-size: 0.65rem; width: 76px; }
+  .stat-value { font-size: 0.65rem; width: 100px; }
 }
