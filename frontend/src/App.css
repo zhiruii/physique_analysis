@@ -472,11 +472,9 @@
     padding: 12px 16px; gap: 8px;
   }
 
-  /* Camera viewport — force GPU compositing layer so iOS Safari paints the video */
+  /* Camera viewport — explicit height; clip-path on .viewport already forces GPU compositing */
   .viewport {
     height: 56vh;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
   }
 
   /* Frame hint — allow wrapping */
