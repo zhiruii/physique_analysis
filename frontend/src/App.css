@@ -158,7 +158,6 @@
 .viewport {
   position: relative;
   background: #000;
-  clip-path: inset(0);   /* clips like overflow:hidden but doesn't suppress iOS Safari video paint */
   flex: 1;
 }
 
@@ -472,8 +471,9 @@
     padding: 12px 16px; gap: 8px;
   }
 
-  /* Camera viewport — explicit height; clip-path on .viewport already forces GPU compositing */
+  /* Camera viewport — flex:none so height:56vh is the sole sizing authority */
   .viewport {
+    flex: none;
     height: 56vh;
   }
 
