@@ -258,8 +258,8 @@ export default function App() {
     if (s >= 90) return 'Pro Competitor'
     if (s >= 76) return 'Sponsored Athlete'
     if (s >= 55) return 'Competitive Amateur'
-    if (s >= 35) return '2–3 Yrs Lifting'
-    return 'First Year'
+    if (s >= 35) return 'Consistent'
+    return 'Beginner'
   }
 
   const labelDisplay = getScoreLabel(score)
@@ -268,115 +268,104 @@ export default function App() {
     <div className="pheno-app">
       <header className="pheno-header">
         <div className="logo">PHENO</div>
-        <div className="hamburger"><span /><span /><span /></div>
+        <a
+          className="feedback-btn"
+          href="https://docs.google.com/forms/d/e/1FAIpQLSc-0Pz0elrQJJFe4RhK8ZZ5NoiWikT8lnJzQ9tvlqt6VyYhww/viewform?usp=dialog"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          We would love your feedback
+        </a>
       </header>
+
+      <div className="privacy-banner">
+        &#x25B8; YOUR CAMERA FEED IS PROCESSED ENTIRELY ON THIS DEVICE — NO DATA IS EVER UPLOADED OR STORED
+      </div>
 
       <div className="pheno-layout">
         <div className="hero-col">
           <h1 className="hero-title">PHENO<br />Physique<br />Analysis.</h1>
           <p className="hero-sub">Real-time physique classification.<br />All processing local. Nothing transmitted.</p>
 
-          <div className="ref-scale">
-            <div className="ref-title">SCORE REFERENCE</div>
-            <ul className="ref-list">
-              <li><span className="ref-range">90+</span><span className="ref-desc">Pro competitor</span></li>
-              <li><span className="ref-range">76–90</span><span className="ref-desc">Sponsored athlete</span></li>
-              <li><span className="ref-range">55–75</span><span className="ref-desc">Competitive amateur</span></li>
-              <li><span className="ref-range">35–54</span><span className="ref-desc">2–3 yrs consistent lifting</span></li>
-              <li><span className="ref-range">20–34</span><span className="ref-desc">First year of training</span></li>
+          <div className="system-log">
+            <div className="log-title">SYSTEM LOG</div>
+            <ul>
+              {log.map((entry, i) => (
+                <li key={i}><span className="log-bullet">&#x25B6;</span> {entry}</li>
+              ))}
             </ul>
           </div>
         </div>
 
         <div className="content-col">
-          <section className="analysis-window">
-            <div className="window-header">
-              Video Analysis Window &mdash; <span className="live-tag">[Live]</span> Body Pose Analysis
-            </div>
-            <div className="viewport">
-              <div className="grid-overlay" />
-              <video ref={videoRef} className="camera-feed" playsInline muted />
-              <canvas ref={canvasRef} className="skeleton-canvas" />
-              {/* Hidden 224×224 capture canvas for worker frames */}
-              <canvas ref={captureRef} width={224} height={224} style={{ display: 'none' }} />
-
-              {initError && <div className="error-overlay">{initError}</div>}
-
-              <div className="frame-hint">
-                {!cameraReady
-                  ? 'Waiting for camera permission...'
-                  : !landmarkerRef.current
-                  ? 'Loading pose detector...'
-                  : poseVisible
-                  ? 'Upper body locked — analysing'
-                  : 'Position upper body within frame'}
+          <div className="camera-score-row">
+            <section className="analysis-window">
+              <div className="window-header">
+                Video Analysis Window &mdash; <span className="live-tag">[Live]</span>
               </div>
-              <div className="privacy-badge">
-                CAMERA PROCESSED LOCALLY — NEVER TRANSMITTED
-              </div>
-            </div>
-          </section>
+              <div className="viewport">
+                <div className="grid-overlay" />
+                <video ref={videoRef} className="camera-feed" playsInline muted />
+                <canvas ref={canvasRef} className="skeleton-canvas" />
+                <canvas ref={captureRef} width={224} height={224} style={{ display: 'none' }} />
 
-          <div className="stats-row">
-            <div className="score-card">
-              <div className="card-label">PHENO SCORE</div>
-              <div className={`main-score ${score !== null ? 'scored' : ''}`}>
-                {score !== null ? score : '--'}
-              </div>
-              <div className="score-label">{labelDisplay}</div>
-              <p className="score-footer">Real-time physique classification</p>
-            </div>
+                {initError && <div className="error-overlay">{initError}</div>}
 
-            <div className="system-log">
-              <div className="log-title">SYSTEM LOG</div>
-              <ul>
-                {log.map((entry, i) => (
-                  <li key={i}><span className="log-bullet">&#x25B6;</span> {entry}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="metrics-bar">
-            <div className="bar-stats">
-              <div className="stat-item">
-                <span className="stat-label">Overall Score</span>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: `${scorePercent}%` }} />
+                <div className="frame-hint">
+                  {!cameraReady
+                    ? 'Waiting for camera permission...'
+                    : !landmarkerRef.current
+                    ? 'Loading pose detector...'
+                    : poseVisible
+                    ? 'Upper body locked — analysing'
+                    : 'Position upper body within frame'}
                 </div>
-                <span className="stat-value">{score ?? '--'}</span>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Body Detected</span>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: poseVisible ? '100%' : '0%' }} />
-                </div>
-                <span className="stat-value">{poseVisible ? 'YES' : 'NO'}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Classification</span>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{
-                    width: score === null ? '0%' : `${score}%`
-                  }} />
-                </div>
-                <span className="stat-value">{labelDisplay}</span>
-              </div>
-            </div>
+            </section>
 
-            <div className="score-ring">
-              <svg viewBox="0 0 80 80" className="ring-svg">
-                <circle cx="40" cy="40" r="34" fill="none" stroke="#1a2e1a" strokeWidth="6" />
-                <circle cx="40" cy="40" r="34" fill="none" stroke="#00ff41" strokeWidth="6"
-                  strokeDasharray={`${2*Math.PI*34*scorePercent/100} ${2*Math.PI*34}`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 40 40)"
-                  style={{ transition: 'stroke-dasharray 0.6s ease', filter: 'drop-shadow(0 0 4px #00ff41)' }}
-                />
-              </svg>
-              <div className="ring-inner">
-                <div className="ring-label">Physique<br />Score</div>
-                <div className="ring-value">{score ?? '--'}</div>
+            <div className="score-panel">
+              <div className="score-card">
+                <div className="card-label">SCORE</div>
+                <div className={`main-score ${score !== null ? 'scored' : ''}`}>
+                  {score !== null ? score : '--'}
+                </div>
+                <div className="score-label">{labelDisplay}</div>
+                <p className="score-footer">Real-time physique classification</p>
+              </div>
+
+              <div className="ref-scale">
+                <div className="ref-title">SCORE REFERENCE</div>
+                <ul className="ref-list">
+                  <li><span className="ref-range">90+</span><span className="ref-desc">Pro competitor</span></li>
+                  <li><span className="ref-range">76–90</span><span className="ref-desc">Sponsored athlete</span></li>
+                  <li><span className="ref-range">55–75</span><span className="ref-desc">Competitive amateur</span></li>
+                  <li><span className="ref-range">35–54</span><span className="ref-desc">Consistent</span></li>
+                  <li><span className="ref-range">20–34</span><span className="ref-desc">Beginner</span></li>
+                </ul>
+              </div>
+
+              <div className="metrics-bar">
+                <div className="stat-item">
+                  <span className="stat-label">Overall Score</span>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${scorePercent}%` }} />
+                  </div>
+                  <span className="stat-value">{score ?? '--'}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Classification</span>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: score === null ? '0%' : `${score}%` }} />
+                  </div>
+                  <span className="stat-value">{labelDisplay}</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Body Detected</span>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: poseVisible ? '100%' : '0%' }} />
+                  </div>
+                  <span className="stat-value">{poseVisible ? 'YES' : 'NO'}</span>
+                </div>
               </div>
             </div>
           </div>
