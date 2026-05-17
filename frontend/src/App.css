@@ -179,7 +179,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);   /* mirror like a selfie cam */
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  will-change: transform;  /* forces GPU compositing layer — fixes iOS Safari video rendering */
 }
 
 .skeleton-canvas {
@@ -189,7 +191,9 @@
   height: 100%;
   object-fit: cover;
   z-index: 2;
-  transform: scaleX(-1);   /* mirror to match video */
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  will-change: transform;
 }
 
 .frame-hint {
@@ -410,12 +414,8 @@
   line-height: 1.4;
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
+/* ── Portrait phone ──────────────────────────────────────────── */
 @media (max-width: 700px) {
-  /* Sidebar is desktop-only — primary info is camera + score */
-  .hero-col { display: none; }
-
-  /* Stack everything vertically */
   .pheno-layout { flex-direction: column; }
   .content-col { overflow: visible; }
 
@@ -423,37 +423,96 @@
   .pheno-header { padding: 10px 14px; }
   .feedback-btn { font-size: 0.58rem; padding: 5px 8px; letter-spacing: 0.03em; }
 
-  /* Privacy banner — smaller, allow wrap */
-  .privacy-banner { font-size: 0.58rem; padding: 6px 12px; letter-spacing: 0.03em; }
+  /* Privacy banner */
+  .privacy-banner { font-size: 0.56rem; padding: 6px 12px; letter-spacing: 0.03em; }
 
-  /* Camera fills most of the screen */
+  /* Hero col — hide title/subtitle, show system log only, push to bottom */
+  .hero-col {
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    gap: 0;
+    order: 10;
+  }
+  .hero-title { display: none; }
+  .hero-sub   { display: none; }
+
+  /* Column layout */
   .camera-score-row { flex-direction: column; height: auto; border-bottom: none; }
   .window-header { display: none; }
-  .analysis-window { border-right: none; border-bottom: 1px solid var(--border); }
-  .viewport { height: 52vh; }
 
-  /* Frame hint — allow wrapping on narrow screens */
+  /*
+   * Dissolve score-panel so its children join the column flow directly.
+   * This lets us individually order: score → camera → ref scale → metrics.
+   */
+  .score-panel { display: contents; }
+
+  .score-card {
+    order: 1;
+    width: 100%; box-sizing: border-box;
+    padding: 14px 16px; gap: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .analysis-window {
+    order: 2;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-scale {
+    order: 3;
+    width: 100%; box-sizing: border-box;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .metrics-bar {
+    order: 4;
+    width: 100%; box-sizing: border-box;
+    padding: 12px 16px; gap: 8px;
+  }
+
+  /* Camera viewport — tall, fills most of screen */
+  .viewport { height: 56vh; }
+
+  /* Frame hint — allow wrapping */
   .frame-hint {
     white-space: normal;
     text-align: center;
     font-size: 0.7rem;
     bottom: 10px;
-    left: 8%;
-    right: 8%;
+    left: 8%; right: 8%;
     transform: none;
     width: auto;
   }
 
-  /* Score panel */
-  .score-panel { width: 100%; }
-  .score-card { padding: 14px 16px; gap: 2px; }
+  /* Score */
   .main-score { font-size: 3.5rem; }
 
-  /* Reference scale is non-critical — hide to save space */
-  .ref-scale { display: none; }
+  /* Ref scale — horizontal row */
+  .ref-list { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; }
+  .ref-list li { flex-direction: column; gap: 1px; padding-left: 4px; }
+  .ref-range { font-size: 0.7rem; width: auto; }
+  .ref-desc  { font-size: 0.6rem; }
 
-  /* Compact metrics bar */
-  .metrics-bar { padding: 12px 16px; gap: 8px; }
+  /* Metrics */
   .stat-label { font-size: 0.65rem; width: 76px; }
   .stat-value { font-size: 0.65rem; width: 100px; }
+}
+
+/* ── Phone landscape ─────────────────────────────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Narrow the sidebar so the camera gets more room */
+  .hero-col { width: 150px; padding: 16px 12px; gap: 10px; }
+  .hero-title { font-size: 1.4rem; }
+  .hero-sub   { font-size: 0.65rem; }
+
+  /* Camera row fills the viewport below header + banner */
+  .camera-score-row { height: calc(100vh - 78px); }
+
+  /* Narrower score panel */
+  .score-panel { width: 240px; }
+  .score-card  { padding: 12px 14px; }
+  .main-score  { font-size: 2.8rem; }
+  .ref-scale   { padding: 8px 12px; }
+  .metrics-bar { padding: 8px 12px; gap: 6px; }
 }
