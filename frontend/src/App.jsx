@@ -3,7 +3,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import './App.css'
 
 const CLASS_LABELS    = ['advanced', 'beginner', 'intermediate']
-const CLASS_MIDPOINTS = { advanced: 93, beginner: 30, intermediate: 68 }
+const CLASS_MIDPOINTS = { advanced: 95, beginner: 24, intermediate: 71 }
 
 function computeScore(probs) {
   return Math.round(
@@ -252,7 +252,17 @@ export default function App() {
 
 
   const scorePercent  = score ?? 0
-  const labelDisplay  = label ? label.charAt(0).toUpperCase() + label.slice(1) : 'Awaiting'
+
+  function getScoreLabel(s) {
+    if (s === null) return 'Awaiting'
+    if (s >= 90) return 'Pro Competitor'
+    if (s >= 76) return 'Sponsored Athlete'
+    if (s >= 55) return 'Competitive Amateur'
+    if (s >= 35) return '2–3 Yrs Lifting'
+    return 'First Year'
+  }
+
+  const labelDisplay = getScoreLabel(score)
 
   return (
     <div className="pheno-app">
@@ -269,11 +279,11 @@ export default function App() {
           <div className="ref-scale">
             <div className="ref-title">SCORE REFERENCE</div>
             <ul className="ref-list">
-              <li><span className="ref-range">90+</span><span className="ref-desc">Professional competitor</span></li>
-              <li><span className="ref-range">80–90</span><span className="ref-desc">Sponsored athlete</span></li>
-              <li><span className="ref-range">60–75</span><span className="ref-desc">Competitive amateur</span></li>
-              <li><span className="ref-range">40–55</span><span className="ref-desc">2–3 yrs consistent lifting</span></li>
-              <li><span className="ref-range">20–35</span><span className="ref-desc">First year of training</span></li>
+              <li><span className="ref-range">90+</span><span className="ref-desc">Pro competitor</span></li>
+              <li><span className="ref-range">76–90</span><span className="ref-desc">Sponsored athlete</span></li>
+              <li><span className="ref-range">55–75</span><span className="ref-desc">Competitive amateur</span></li>
+              <li><span className="ref-range">35–54</span><span className="ref-desc">2–3 yrs consistent lifting</span></li>
+              <li><span className="ref-range">20–34</span><span className="ref-desc">First year of training</span></li>
             </ul>
           </div>
         </div>
@@ -347,7 +357,7 @@ export default function App() {
                 <span className="stat-label">Classification</span>
                 <div className="bar-track">
                   <div className="bar-fill" style={{
-                    width: label === 'beginner' ? '33%' : label === 'intermediate' ? '66%' : label === 'advanced' ? '100%' : '0%'
+                    width: score === null ? '0%' : `${score}%`
                   }} />
                 </div>
                 <span className="stat-value">{labelDisplay}</span>
