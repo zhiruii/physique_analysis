@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -13,7 +14,7 @@ CLASS_LABELS = ['advanced', 'beginner', 'intermediate']
 
 model = tf.keras.models.load_model(MODEL_PATH)
 
-datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
+datagen = ImageDataGenerator(preprocessing_function=preprocess_input, validation_split=0.2)
 
 val_data = datagen.flow_from_directory(
     DATASET_DIR, target_size=IMG_SIZE,

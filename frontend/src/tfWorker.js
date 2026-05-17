@@ -37,13 +37,14 @@ self.onmessage = async ({ data: msg }) => {
     try {
       const { pixels, width, height } = msg
 
-      // RGBA → RGB float32 normalised to [0,1], shape [1, 224, 224, 3]
+      // RGBA → RGB float32 normalised to [-1,1], shape [1, 224, 224, 3]
+      // Matches MobileNetV2 preprocess_input used during training
       const float32 = new Float32Array(224 * 224 * 3)
       const rgba = new Uint8Array(pixels.buffer)
       for (let i = 0; i < 224 * 224; i++) {
-        float32[i * 3]     = rgba[i * 4]     / 255
-        float32[i * 3 + 1] = rgba[i * 4 + 1] / 255
-        float32[i * 3 + 2] = rgba[i * 4 + 2] / 255
+        float32[i * 3]     = rgba[i * 4]     / 127.5 - 1
+        float32[i * 3 + 1] = rgba[i * 4 + 1] / 127.5 - 1
+        float32[i * 3 + 2] = rgba[i * 4 + 2] / 127.5 - 1
       }
 
       const tensor = new ort.Tensor('float32', float32, [1, 224, 224, 3])

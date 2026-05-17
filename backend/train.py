@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 import os
@@ -11,7 +12,7 @@ BATCH_SIZE  = 16
 EPOCHS      = 30
 
 train_datagen = ImageDataGenerator(
-    rescale=1./255,
+    preprocessing_function=preprocess_input,
     validation_split=0.2,
     horizontal_flip=True,
     brightness_range=[0.8, 1.2],
@@ -21,7 +22,7 @@ train_datagen = ImageDataGenerator(
 )
 
 val_datagen = ImageDataGenerator(
-    rescale=1./255,
+    preprocessing_function=preprocess_input,
     validation_split=0.2
 )
 
