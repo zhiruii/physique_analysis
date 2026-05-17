@@ -305,7 +305,7 @@ export default function App() {
               </div>
               <div className="viewport">
                 <div className="grid-overlay" />
-                <video ref={videoRef} className="camera-feed" playsInline muted />
+                <video ref={videoRef} className="camera-feed" playsInline muted autoPlay />
                 <canvas ref={canvasRef} className="skeleton-canvas" />
                 <canvas ref={captureRef} width={224} height={224} style={{ display: 'none' }} />
 
