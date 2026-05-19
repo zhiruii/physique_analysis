@@ -38,3 +38,8 @@ for i, row in enumerate(cm):
     print(f"{CLASS_LABELS[i]:>14}", "  ".join(f"{v:>12}" for v in row))
 print()
 print("Rows = actual class, Columns = predicted class")
+
+print("\n--- Misclassified Images ---")
+for i, (true, pred) in enumerate(zip(y_true, y_pred)):
+    if true != pred:
+        print(f"  {val_data.filenames[i]}  →  actual: {CLASS_LABELS[true]}, predicted: {CLASS_LABELS[pred]}")
