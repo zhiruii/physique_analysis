@@ -4,6 +4,7 @@ import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from pathlib import Path
 
 HERE        = Path(__file__).parent
@@ -13,7 +14,7 @@ IMG_SIZE    = (224, 224)
 
 # Keras assigns class indices alphabetically
 CLASS_LABELS    = ['advanced', 'beginner', 'intermediate']
-CLASS_MIDPOINTS = {'advanced': 84, 'beginner': 16, 'intermediate': 50}
+CLASS_MIDPOINTS = {'advanced': 95, 'beginner': 24, 'intermediate': 71}
 
 model = tf.keras.models.load_model(MODEL_PATH)
 
@@ -30,6 +31,39 @@ landmarker = vision.PoseLandmarker.create_from_options(options)
 
 LEFT_SHOULDER  = 11
 RIGHT_SHOULDER = 12
+
+# Crop geometry — must stay identical to normalize_dataset.py and App.jsx
+UPPER_BODY_LANDMARKS = [11, 12, 13, 14, 15, 16, 23, 24]
+PAD_TOP    = 0.15
+PAD_BOTTOM = 0.05
+PAD_SIDES  = 0.15
+
+def landmark_crop(rgb, pose_landmarks):
+    """Crop upper body using landmark bounding box geometry (matches normalize_dataset.py)."""
+    h, w = rgb.shape[:2]
+    lm = pose_landmarks[0]
+    visible = [i for i in UPPER_BODY_LANDMARKS if lm[i].visibility >= 0.3]
+    if not visible:
+        return None
+    xs = [lm[i].x for i in visible]
+    ys = [lm[i].y for i in visible]
+    x_min, x_max = min(xs), max(xs)
+    y_min, y_max = min(ys), max(ys)
+    crop_w = x_max - x_min
+    crop_h = y_max - y_min
+    x_min -= crop_w * PAD_SIDES
+    x_max += crop_w * PAD_SIDES
+    y_min -= crop_h * PAD_TOP
+    y_max += crop_h * PAD_BOTTOM
+    cx = (x_min + x_max) / 2
+    cy = (y_min + y_max) / 2
+    half = max(x_max - x_min, y_max - y_min) / 2
+    x_min, x_max = max(0.0, cx - half), min(1.0, cx + half)
+    y_min, y_max = max(0.0, cy - half), min(1.0, cy + half)
+    px1, px2 = int(x_min * w), int(x_max * w)
+    py1, py2 = int(y_min * h), int(y_max * h)
+    crop = rgb[py1:py2, px1:px2]
+    return crop if crop.size > 0 else None
 
 # Body-only connections — no face (0-10) or finger detail (17-22)
 BODY_CONNECTIONS = [
@@ -81,7 +115,11 @@ while cap.isOpened():
     draw_pose(frame, result.pose_landmarks)
 
     if upper_body_visible(result.pose_landmarks):
-        img   = cv2.resize(frame, IMG_SIZE).astype('float32') / 255.0
+        crop = landmark_crop(rgb, result.pose_landmarks)
+        if crop is None:
+            crop = rgb
+        crop_resized = cv2.resize(crop, IMG_SIZE)
+        img   = preprocess_input(crop_resized.astype('float32'))
         probs = model.predict(np.expand_dims(img, axis=0), verbose=0)[0]
 
         label = CLASS_LABELS[np.argmax(probs)]
