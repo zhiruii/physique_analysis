@@ -58,6 +58,7 @@ export default function App() {
   const rafRef         = useRef(null)
   const pendingRef     = useRef(false)   // true while worker is processing a frame
   const modelReadyRef  = useRef(false)   // set true when worker posts 'ready'
+  const smoothedScoreRef = useRef(null)  // EMA accumulator for score smoothing
 
   const [log, setLog]             = useState(['Initialising...'])
   const [score, setScore]         = useState(null)
@@ -96,7 +97,11 @@ export default function App() {
       } else if (msg.type === 'prediction') {
         pendingRef.current = false
         const arr = msg.probs
-        setScore(computeScore(arr))
+        const raw = computeScore(arr)
+        const prev = smoothedScoreRef.current
+        const smoothed = prev === null ? raw : 0.15 * raw + 0.85 * prev
+        smoothedScoreRef.current = smoothed
+        setScore(Math.round(smoothed))
         setLabel(CLASS_LABELS[arr.indexOf(Math.max(...arr))])
       }
     }
