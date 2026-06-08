@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
+import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset, random_split
 
@@ -13,6 +14,7 @@ IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 train_transform = transforms.Compose([
+    transforms.Resize(IMG_SIZE),
     transforms.RandomHorizontalFlip(),
     transforms.ColorJitter(brightness=0.2),
     transforms.RandomRotation(10),
