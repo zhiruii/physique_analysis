@@ -47,19 +47,26 @@ test_set = SubsetWithTransform(test_subset, test_transform)
 train_loader = DataLoader(train_set, batch_size= BATCH_SIZE, shuffle= True)
 test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
-for param in model.features.parameters():
-    param.requires_grad = False
 
 class MyClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.Dropout = nn.Dropout(0.3)
-        self.fc = nn.Linear(1280, 3)
+        self.fc1 = nn.Linear(1280, 128)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(128, 3)
 
     def forward(self, x):
         x = self.Dropout(x)
-        x = self.fc(x)
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
         return x
+
+model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
+
+for param in model.features.parameters():
+    param.requires_grad = False
+
 model.classifier = MyClassifier()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -69,7 +76,8 @@ criterion = nn.CrossEntropyLoss()
 optimiser = optim.Adam(model.classifier.parameters(), lr = 0.001)
 
 for epoch in range(EPOCHS):
-    model.classifier.train()
+    model.train()
+    model.features.eval()
     running_loss = 0.0
 
     for x_batch, y_batch in train_loader:
@@ -83,7 +91,7 @@ for epoch in range(EPOCHS):
 
         running_loss += loss.item()
 
-    print(f'Epoch {epoch + 1}: Loss was {running_loss / len(train_loader)}')
+    print(f'Epoch {epoch + 1}: Loss was {running_loss / len(train_loader): .4f}')
 
 correct = 0
 total = 0
