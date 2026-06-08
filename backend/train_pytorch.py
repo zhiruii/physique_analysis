@@ -3,24 +3,49 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 
 DATASET_DIR = '../dataset_normalized'
 IMG_SIZE    = (224, 224)
 BATCH_SIZE  = 16
 EPOCHS      = 30
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
 
-transform = transforms.Compose([
-    transforms.Resize(IMG_SIZE),
+train_transform = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(brightness=0.2),
+    transforms.RandomRotation(10),
     transforms.ToTensor(),
+    transforms.Normalize(mean = IMAGENET_MEAN, std=IMAGENET_STD),
+
 ])
 
-dataset = datasets.ImageFolder(root = 'DATASET_DIR', transform=transform)
-model = models.mobilenet_v2(weights = models.MobileNet_V2_Weights.DEFAULT)
-train_set, test_set = random_split(dataset=dataset, lengths=[0.8, 0.2])
+test_transform = transforms.Compose([
+    transforms.Resize(IMG_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=IMAGENET_MEAN, std= IMAGENET_STD),
+])
+
+class SubsetWithTransform(Dataset):
+    def __init__(self, subset, transform):
+        self.subset = subset
+        self.transform = transform
+    def __getitem__(self, index):
+        img, label = self.subset[index]
+        return self.transform(img), label
+    
+    def __len__(self):
+        return len(self.subset)
+    
+base_data = datasets.ImageFolder(root = DATASET_DIR)
+train_subset, test_subset = random_split(dataset=base_data, lengths=[0.8, 0.2], generator=torch.Generator().manual_seed(123))
+
+train_set = SubsetWithTransform(train_subset, train_transform)
+test_set = SubsetWithTransform(test_subset, test_transform)
 
 train_loader = DataLoader(train_set, batch_size= BATCH_SIZE, shuffle= True)
-test_loader = DataLoader(test_set, batch_size= BATCH_SIZE, shuffle = False)
+test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
 for param in model.features.parameters():
     param.requires_grad = False
@@ -37,7 +62,7 @@ class MyClassifier(nn.Module):
         return x
 model.classifier = MyClassifier()
 
-device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
