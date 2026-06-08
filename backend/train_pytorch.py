@@ -96,14 +96,31 @@ for epoch in range(EPOCHS):
 correct = 0
 total = 0
 
+model.eval()
+
 with torch.no_grad():
-    model.eval()
     for x_batch, y_batch in test_loader:
         x_batch, y_batch = x_batch.to(device), y_batch.to(device)
         preds = model(x_batch)
-        predictions = preds.argmax(dim = -1)
+        predictions = preds.argmax(dim = 1)
         correct += (predictions == y_batch).sum().item()
         total += y_batch.size(0)
 
 accuracy = correct / total
 print(f'accuracy: {accuracy}')
+
+os.makedirs('models', exist_ok = True)
+torch.save(model.state_dict(), 'models/physique_classifier_3class.pth')
+print('Weights saved to models/physique_classifier_3class.pth') 
+
+dummy = torch.zeros(1, 3, 224, 224, device=device)
+torch.onnx.export(
+    model,
+    dummy,
+    '../frontend/public/model/model.onnx',
+    input_names=['input'],
+    output_names=['output'],
+    dynamic_axes={'input': {0: 'batch'}, 'output': {0: 'batch'}},
+    opset_version=17,
+)
+print('ONNX model exported to frontend/public/model/model.onnx')
