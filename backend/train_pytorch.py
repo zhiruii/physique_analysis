@@ -5,6 +5,7 @@ import torchvision.models as models
 import os
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset, random_split
+from sklearn.metrics import classification_report, confusion_matrix
 
 DATASET_DIR = '../dataset_normalized'
 IMG_SIZE    = (224, 224)
@@ -14,6 +15,7 @@ PATIENCE = 10
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 CHECKPOINT = 'models/best_checkpoint.pth'
+CLASS_LABELS = ['advanced', 'beginner', 'intermediate']
 
 train_transform = transforms.Compose([
     transforms.Resize(IMG_SIZE),
@@ -126,7 +128,8 @@ print(f'Loaded best checkpoint (val_loss={best_val_loss:.4f})')
 
 correct = 0
 total = 0
-
+all_preds = []
+all_labels = []
 model.eval()
 
 with torch.no_grad():
@@ -136,21 +139,35 @@ with torch.no_grad():
         predictions = preds.argmax(dim = 1)
         correct += (predictions == y_batch).sum().item()
         total += y_batch.size(0)
+        all_preds.append(predictions)
+        all_labels.append(y_batch)
 
 accuracy = correct / total
 print(f'accuracy (validation accuracy only): {accuracy}')
 
-torch.save(model.state_dict(), 'models/physique_classifier_3class.pth')
-print('Weights saved to models/physique_classifier_3class.pth') 
+all_preds = torch.cat(all_preds).cpu().numpy()
+all_labels = torch.cat(all_labels).cpu().numpy()
 
-dummy = torch.zeros(1, 3, 224, 224, device=device)
-torch.onnx.export(
-    model,
-    dummy,
-    '../frontend/public/model/model.onnx',
-    input_names=['input'],
-    output_names=['output'],
-    dynamic_axes={'input': {0: 'batch'}, 'output': {0: 'batch'}},
-    opset_version=17,
-)
-print('ONNX model exported to frontend/public/model/model.onnx')
+print(classification_report(all_labels, all_preds, target_names=CLASS_LABELS))
+cm = confusion_matrix(all_labels, all_preds)
+print(cm)
+
+
+if input('Continue? (Y/N)').upper() == 'Y':
+    torch.save(model.state_dict(), 'models/physique_classifier_3class.pth')
+    print('Weights saved to models/physique_classifier_3class.pth') 
+
+    dummy = torch.zeros(1, 3, 224, 224, device=device)
+    torch.onnx.export(
+        model,
+        dummy,
+        '../frontend/public/model/model.onnx',
+        input_names=['input'],
+        output_names=['output'],
+        dynamic_axes={'input': {0: 'batch'}, 'output': {0: 'batch'}},
+        opset_version=17,
+    )
+    print('ONNX model exported to frontend/public/model/model.onnx')
+
+else:
+    print("Export cancelled")
