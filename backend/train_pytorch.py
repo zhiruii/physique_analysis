@@ -74,7 +74,7 @@ model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
 for param in model.features.parameters():
     param.requires_grad = False
 
-#Initialling classifier layer
+#Initialising classifier layer
 model.classifier = MyClassifier()
 
 #Move to GPU for faster computation
@@ -156,6 +156,18 @@ all_labels = torch.cat(all_labels).cpu().numpy()
 print(classification_report(all_labels, all_preds, target_names=CLASS_LABELS))
 cm = confusion_matrix(all_labels, all_preds)
 print(cm)
+
+print('\nMisclassified images:')
+model.eval()
+
+with torch.no_grad():
+    for idx in val_subset.indices:
+        file_path, true_lable = base_data.samples[idx]
+        img, _ = base_data[idx]
+        img_tensor = val_transform(img).unsqueeze(0).to(device)
+        pred_label = model(img_tensor).argmax(dim = 1).item()
+        if pred_label != true_lable:
+            print(f'  {os.path.basename(file_path)}: true={CLASS_LABELS[true_lable]}, predicted={CLASS_LABELS[pred_label]}')
 
 
 if input('Continue? (Y/N)').upper() == 'Y':
