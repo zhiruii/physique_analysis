@@ -70,11 +70,14 @@ class MyClassifier(nn.Module):
 
 model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
 
+#Freezing of model.features
 for param in model.features.parameters():
     param.requires_grad = False
 
+#Initialling classifier layer
 model.classifier = MyClassifier()
 
+#Move to GPU for faster computation
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 
@@ -85,6 +88,7 @@ os.makedirs('models', exist_ok=True)
 best_val_loss = float('inf')
 epochs_no_improvement = 0
 
+#Training loop
 for epoch in range(EPOCHS):
     model.train()
     model.features.eval()
@@ -132,6 +136,7 @@ all_preds = []
 all_labels = []
 model.eval()
 
+#Validation loop (replace with test_set when there is more data for the split)
 with torch.no_grad():
     for x_batch, y_batch in val_loader:
         x_batch, y_batch = x_batch.to(device), y_batch.to(device)
