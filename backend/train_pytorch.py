@@ -9,9 +9,11 @@ from torch.utils.data import DataLoader, Dataset, random_split
 DATASET_DIR = '../dataset_normalized'
 IMG_SIZE    = (224, 224)
 BATCH_SIZE  = 16
-EPOCHS      = 30
+EPOCHS      = 100
+PATIENCE = 10
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
+CHECKPOINT = 'models/best_checkpoint.pth'
 
 train_transform = transforms.Compose([
     transforms.Resize(IMG_SIZE),
@@ -23,7 +25,7 @@ train_transform = transforms.Compose([
 
 ])
 
-test_transform = transforms.Compose([
+val_transform = transforms.Compose([
     transforms.Resize(IMG_SIZE),
     transforms.ToTensor(),
     transforms.Normalize(mean=IMAGENET_MEAN, std= IMAGENET_STD),
@@ -41,13 +43,13 @@ class SubsetWithTransform(Dataset):
         return len(self.subset)
     
 base_data = datasets.ImageFolder(root = DATASET_DIR)
-train_subset, test_subset = random_split(dataset=base_data, lengths=[0.8, 0.2], generator=torch.Generator().manual_seed(123))
+train_subset, val_subset = random_split(dataset=base_data, lengths=[0.8, 0.2], generator=torch.Generator().manual_seed(123))
 
 train_set = SubsetWithTransform(train_subset, train_transform)
-test_set = SubsetWithTransform(test_subset, test_transform)
+val_set = SubsetWithTransform(val_subset, val_transform)
 
 train_loader = DataLoader(train_set, batch_size= BATCH_SIZE, shuffle= True)
-test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
+val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
 
 
 class MyClassifier(nn.Module):
@@ -77,6 +79,10 @@ model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimiser = optim.Adam(model.classifier.parameters(), lr = 0.001)
 
+os.makedirs('models', exist_ok=True)
+best_val_loss = float('inf')
+epochs_no_improvement = 0
+
 for epoch in range(EPOCHS):
     model.train()
     model.features.eval()
@@ -93,7 +99,30 @@ for epoch in range(EPOCHS):
 
         running_loss += loss.item()
 
-    print(f'Epoch {epoch + 1}: Loss was {running_loss / len(train_loader): .4f}')
+    train_loss = running_loss / len(train_loader)
+
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for x_batch, y_batch in val_loader:
+            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+            preds = model(x_batch)
+            loss = criterion(preds, y_batch)
+            val_loss += loss.item()
+    val_loss /= len(val_loader)
+    print(f'Epoch {epoch + 1:3d}: train_loss={train_loss:.4f}  val_loss={val_loss:.4f}')
+
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        epochs_no_improvement = 0
+        torch.save(model.state_dict(), CHECKPOINT)
+    else:
+        epochs_no_improvement += 1
+        if epochs_no_improvement >= PATIENCE:
+            print(f'Early stopping — no val improvement for {PATIENCE} epochs')
+            break
+model.load_state_dict(torch.load(CHECKPOINT, weights_only=True))
+print(f'Loaded best checkpoint (val_loss={best_val_loss:.4f})')
 
 correct = 0
 total = 0
@@ -101,7 +130,7 @@ total = 0
 model.eval()
 
 with torch.no_grad():
-    for x_batch, y_batch in test_loader:
+    for x_batch, y_batch in val_loader:
         x_batch, y_batch = x_batch.to(device), y_batch.to(device)
         preds = model(x_batch)
         predictions = preds.argmax(dim = 1)
@@ -109,9 +138,8 @@ with torch.no_grad():
         total += y_batch.size(0)
 
 accuracy = correct / total
-print(f'accuracy: {accuracy}')
+print(f'accuracy (validation accuracy only): {accuracy}')
 
-os.makedirs('models', exist_ok = True)
 torch.save(model.state_dict(), 'models/physique_classifier_3class.pth')
 print('Weights saved to models/physique_classifier_3class.pth') 
 
