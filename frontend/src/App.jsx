@@ -76,7 +76,7 @@ export default function App() {
     let cancelled = false
 
     // ── Worker ─────────────────────────────────────────────
-    const worker = new Worker(new URL('./tfWorker.js', import.meta.url), { type: 'module' })
+    const worker = new Worker(new URL('./onnxWorker.js', import.meta.url), { type: 'module' })
     workerRef.current = worker
 
     worker.onmessage = ({ data: msg }) => {
