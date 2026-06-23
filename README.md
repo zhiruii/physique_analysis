@@ -38,7 +38,7 @@ This produces a continuous 0–100 scale that reflects confidence distribution r
 
 The majority of training data is AI-generated. Real webcam footage has different lighting and texture characteristics from synthetic images, which is the primary source of real-world inaccuracy. Reliable classification is limited to the five trained poses.
 
-87.5% on the validation set, though this overstates true generalisation as the same split was used for early stopping to determine best epoch. The next meaningful improvement requires a larger real-photo dataset.
+87.5% on the validation set, though this overstates true generalisation as the same split was used for early stopping to determine best epoch. The contraint is capped by the size of the available dataset.
 
 ---
 
