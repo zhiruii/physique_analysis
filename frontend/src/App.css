@@ -72,6 +72,18 @@
   text-shadow: var(--glow);
 }
 
+.usage-tip {
+  background: rgba(0, 255, 65, 0.03);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 24px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--green);
+  opacity: 0.75;
+  letter-spacing: 0.08em;
+}
+
 /* ── Layout ─────────────────────────────────────────────────── */
 .pheno-layout {
   display: flex;
@@ -423,6 +435,7 @@
 
   /* Privacy banner */
   .privacy-banner { font-size: 0.56rem; padding: 6px 12px; letter-spacing: 0.03em; }
+  .usage-tip { font-size: 0.5rem; padding: 5px 12px; letter-spacing: 0.02em; }
 
   /* Hero col — hide title/subtitle, show system log only, push to bottom */
   .hero-col {

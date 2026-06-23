@@ -287,6 +287,10 @@ export default function App() {
         &#x25B8; YOUR CAMERA FEED IS PROCESSED ENTIRELY ON THIS DEVICE — NO DATA IS EVER UPLOADED OR STORED
       </div>
 
+      <div className="usage-tip">
+        &#x25B8; FOR BEST ACCURACY: STRIKE A DOUBLE BICEP POSE AND HOLD STILL UNTIL THE SCORE STABILISES
+      </div>
+
       <div className="pheno-layout">
         <div className="hero-col">
           <h1 className="hero-title">PHENO<br />Physique<br />Analysis.</h1>
