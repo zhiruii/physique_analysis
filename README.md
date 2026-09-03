@@ -1,6 +1,6 @@
-# Physique analyser
+# Physique Classifier
 
-A web app that analyses physique development in real-time using your device camera. MediaPipe detects upper body landmarks, a fine-tuned MobileNetV2 classifies physique into beginner / intermediate / advanced, and a weighted score from 0–100 is returned live.
+A web app that classifies physique development in real-time using your device camera. MediaPipe detects upper body landmarks, a fine-tuned MobileNetV2 classifies physique into beginner / intermediate / advanced, and a weighted score from 0–100 is returned live.
 
 Live site → https://pheno-physique.vercel.app
 
